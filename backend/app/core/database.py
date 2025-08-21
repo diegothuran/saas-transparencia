@@ -37,16 +37,16 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=sync_engine)
 Base = declarative_base()
 
 # Dependency to get database session
-async def get_db() -> AsyncSession:
-    async with AsyncSessionLocal() as session:
-        try:
-            yield session
-        except Exception as e:
-            logger.error(f"Database session error: {e}")
-            await session.rollback()
-            raise
-        finally:
-            await session.close()
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    except Exception as e:
+        logger.error(f"Database session error: {e}")
+        db.rollback()
+        raise
+    finally:
+        db.close()
 
 # Sync session for migrations and initial setup
 def get_sync_db():

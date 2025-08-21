@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
+import { AuthProvider } from '@/contexts/AuthContext'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -35,9 +36,11 @@ export default function RootLayout({
         <meta name="theme-color" content="#1976d2" />
       </head>
       <body className={`${inter.className} antialiased`}>
-        <div id="root">
-          {children}
-        </div>
+        <AuthProvider>
+          <div id="root">
+            {children}
+          </div>
+        </AuthProvider>
       </body>
     </html>
   )

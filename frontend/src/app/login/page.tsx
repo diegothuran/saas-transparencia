@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   EyeIcon,
   EyeSlashIcon,
@@ -10,10 +11,10 @@ import {
   LockClosedIcon,
   BuildingOfficeIcon
 } from '@heroicons/react/24/outline';
-import { apiClient } from '@/lib/api';
 
 export default function LoginPage() {
   const router = useRouter();
+  const { login } = useAuth();
   const [formData, setFormData] = useState({
     username: '',
     password: ''
@@ -28,17 +29,14 @@ export default function LoginPage() {
     setError('');
 
     try {
-      const response = await apiClient.login(formData.username, formData.password);
-      
-      if (response.access_token) {
-        // Redirect to admin dashboard
-        router.push('/admin');
-      }
-    } catch (err: any) {
-      setError(
-        err.response?.data?.detail || 
-        'Erro ao fazer login. Verifique suas credenciais.'
-      );
+      await login(formData.username, formData.password);
+      // Redirect to admin dashboard
+      router.push('/admin');
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error 
+        ? err.message 
+        : 'Erro ao fazer login. Verifique suas credenciais.';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

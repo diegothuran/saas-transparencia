@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useState } from 'react';
+import { usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   Bars3Icon,
   XMarkIcon,
@@ -19,25 +20,15 @@ import {
   UserCircleIcon,
   BuildingOfficeIcon
 } from '@heroicons/react/24/outline';
-import { apiClient } from '@/lib/api';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
 }
 
-interface User {
-  id: number;
-  email: string;
-  full_name: string;
-  role: string;
-}
-
 export default function AdminLayout({ children }: AdminLayoutProps) {
-  const router = useRouter();
   const pathname = usePathname();
+  const { user, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
 
   const navigation = [
     { name: 'Dashboard', href: '/admin/dashboard', icon: HomeIcon },
@@ -50,56 +41,13 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     { name: 'Configurações', href: '/admin/configuracoes', icon: CogIcon },
   ];
 
-  useEffect(() => {
-    checkAuth();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const checkAuth = async () => {
-    try {
-      // Verificar se temos token
-      const token = localStorage.getItem('access_token');
-      if (!token) {
-        router.push('/login');
-        return;
-      }
-      
-      const userData = await apiClient.getCurrentUser();
-      setUser(userData);
-    } catch (err: unknown) {
-      console.error("Erro ao carregar dados do usuário:", err);
-      // Redirect to login if not authenticated
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
-      router.push('/login');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      await apiClient.logout();
-      router.push('/login');
-    } catch (error) {
-      // Force logout even if API call fails
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
-      router.push('/login');
-    }
-  };
-
   const isActive = (href: string) => {
     return pathname === href || pathname.startsWith(href + '/');
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
+  const handleLogout = () => {
+    logout();
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">

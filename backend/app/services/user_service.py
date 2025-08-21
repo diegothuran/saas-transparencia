@@ -1,129 +1,128 @@
 from typing import Optional, List
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 from sqlalchemy import select, or_
 from app.models.user import User
 from app.schemas.user import UserCreate, UserUpdate
 from app.services.base_service import BaseService
 from app.core.security import get_password_hash, verify_password
 
-class UserService(BaseService[User, UserCreate, UserUpdate]):
-    def __init__(self, db: AsyncSession):
-        super().__init__(User, db)
+class UserService(BaseService):
+    def __init__(self):
+        pass
     
-    async def get_by_email(self, email: str) -> Optional[User]:
+    def get_user(self, db: Session, user_id: int) -> Optional[User]:
+        """Get user by id"""
+        return db.query(User).filter(User.id == user_id).first()
+    
+    def get_user_by_email(self, db: Session, email: str) -> Optional[User]:
         """Get user by email"""
-        result = await self.db.execute(
-            select(User).where(User.email == email)
-        )
-        return result.scalar_one_or_none()
+        return db.query(User).filter(User.email == email).first()
     
-    async def get_by_username(self, username: str) -> Optional[User]:
+    def get_user_by_username(self, db: Session, username: str) -> Optional[User]:
         """Get user by username"""
-        result = await self.db.execute(
-            select(User).where(User.username == username)
-        )
-        return result.scalar_one_or_none()
+        return db.query(User).filter(User.username == username).first()
     
-    async def get_by_email_or_username(self, identifier: str) -> Optional[User]:
+    def get_user_by_email_or_username(self, db: Session, identifier: str) -> Optional[User]:
         """Get user by email or username"""
-        result = await self.db.execute(
-            select(User).where(
-                or_(User.email == identifier, User.username == identifier)
-            )
-        )
-        return result.scalar_one_or_none()
+        return db.query(User).filter(
+            (User.email == identifier) | (User.username == identifier)
+        ).first()
     
-    async def create(self, obj_in: UserCreate) -> User:
+    def create_user(self, db: Session, user_create: UserCreate) -> User:
         """Create new user with hashed password"""
         # Check if email already exists
-        existing_user = await self.get_by_email(obj_in.email)
+        existing_user = self.get_user_by_email(db, email=user_create.email)
         if existing_user:
             raise ValueError("Email already registered")
         
         # Check if username already exists
-        existing_username = await self.get_by_username(obj_in.username)
+        existing_username = self.get_user_by_username(db, username=user_create.username)
         if existing_username:
             raise ValueError("Username already taken")
         
         # Create user with hashed password
-        user_data = obj_in.model_dump()
+        user_data = user_create.model_dump()
         user_data["hashed_password"] = get_password_hash(user_data.pop("password"))
         
         db_obj = User(**user_data)
-        self.db.add(db_obj)
-        await self.db.commit()
-        await self.db.refresh(db_obj)
+        db.add(db_obj)
+        db.commit()
+        db.refresh(db_obj)
         return db_obj
     
-    async def authenticate(self, username: str, password: str) -> Optional[User]:
+    def authenticate(self, db: Session, username: str, password: str) -> Optional[User]:
         """Authenticate user by username/email and password"""
-        user = await self.get_by_email_or_username(username)
+        user = self.get_user_by_email_or_username(db, identifier=username)
         if not user:
             return None
         if not verify_password(password, user.hashed_password):
             return None
         return user
     
-    async def update_password(self, user: User, new_password: str) -> User:
+    def update_password(self, db: Session, user: User, new_password: str) -> User:
         """Update user password"""
         user.hashed_password = get_password_hash(new_password)
-        await self.db.commit()
-        await self.db.refresh(user)
+        db.commit()
+        db.refresh(user)
         return user
     
-    async def activate_user(self, user_id: int) -> Optional[User]:
+    def activate_user(self, db: Session, user_id: int) -> Optional[User]:
         """Activate user account"""
-        user = await self.get_by_id(user_id)
+        user = self.get_user(db, user_id=user_id)
         if user:
             user.is_active = True
             user.is_verified = True
-            await self.db.commit()
-            await self.db.refresh(user)
+            db.commit()
+            db.refresh(user)
         return user
     
-    async def deactivate_user(self, user_id: int) -> Optional[User]:
+    def deactivate_user(self, db: Session, user_id: int) -> Optional[User]:
         """Deactivate user account"""
-        user = await self.get_by_id(user_id)
+        user = self.get_user(db, user_id=user_id)
         if user:
             user.is_active = False
-            await self.db.commit()
-            await self.db.refresh(user)
+            db.commit()
+            db.refresh(user)
         return user
     
-    async def get_by_tenant(self, tenant_id: int, skip: int = 0, limit: int = 100) -> List[User]:
-        """Get users by tenant"""
-        result = await self.db.execute(
-            select(User)
-            .where(User.tenant_id == tenant_id)
-            .offset(skip)
-            .limit(limit)
-            .order_by(User.created_at.desc())
-        )
-        return result.scalars().all()
+    def get_users(self, db: Session, skip: int = 0, limit: int = 100, tenant_id: Optional[int] = None) -> List[User]:
+        """Get users with optional tenant filter"""
+        query = db.query(User)
+        if tenant_id is not None:
+            query = query.filter(User.tenant_id == tenant_id)
+        return query.order_by(User.created_at.desc()).offset(skip).limit(limit).all()
     
-    async def count_by_tenant(self, tenant_id: int) -> int:
+    def count_users_by_tenant(self, db: Session, tenant_id: int) -> int:
         """Count users by tenant"""
-        from sqlalchemy import func
-        result = await self.db.execute(
-            select(func.count(User.id)).where(User.tenant_id == tenant_id)
-        )
-        return result.scalar()
+        return db.query(User).filter(User.tenant_id == tenant_id).count()
     
-    async def is_email_available(self, email: str, exclude_user_id: Optional[int] = None) -> bool:
+    def is_email_available(self, db: Session, email: str, exclude_user_id: Optional[int] = None) -> bool:
         """Check if email is available"""
-        query = select(User).where(User.email == email)
+        query = db.query(User).filter(User.email == email)
         if exclude_user_id:
-            query = query.where(User.id != exclude_user_id)
-        
-        result = await self.db.execute(query)
-        return result.scalar_one_or_none() is None
+            query = query.filter(User.id != exclude_user_id)
+        return query.first() is None
     
-    async def is_username_available(self, username: str, exclude_user_id: Optional[int] = None) -> bool:
+    def is_username_available(self, db: Session, username: str, exclude_user_id: Optional[int] = None) -> bool:
         """Check if username is available"""
-        query = select(User).where(User.username == username)
+        query = db.query(User).filter(User.username == username)
         if exclude_user_id:
-            query = query.where(User.id != exclude_user_id)
-        
-        result = await self.db.execute(query)
-        return result.scalar_one_or_none() is None
+            query = query.filter(User.id != exclude_user_id)
+        return query.first() is None
+    
+    def update_user(self, db: Session, user: User, user_update: UserUpdate) -> User:
+        """Update user"""
+        update_data = user_update.model_dump(exclude_unset=True)
+        for field, value in update_data.items():
+            setattr(user, field, value)
+        db.commit()
+        db.refresh(user)
+        return user
+    
+    def delete_user(self, db: Session, user_id: int) -> User:
+        """Delete user"""
+        user = self.get_user(db, user_id=user_id)
+        db.delete(user)
+        db.commit()
+        return user
 

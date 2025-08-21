@@ -44,6 +44,9 @@ class Revenue(TenantBaseModel):
     # Legal compliance
     process_number = Column(String(50), nullable=True)
     
+    # Override tenant_id to add ForeignKey
+    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False, index=True)
+    
     # Relationships
     tenant = relationship("Tenant", back_populates="revenues")
     
@@ -79,6 +82,9 @@ class Expense(TenantBaseModel):
     # Contract reference
     contract_id = Column(Integer, ForeignKey("contracts.id"), nullable=True)
     
+    # Override tenant_id to add ForeignKey
+    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False, index=True)
+    
     # Relationships
     tenant = relationship("Tenant", back_populates="expenses")
     contract = relationship("Contract", back_populates="expenses")
@@ -103,6 +109,9 @@ class BudgetExecution(TenantBaseModel):
     committed_amount = Column(Numeric(15, 2), nullable=False, default=0)
     liquidated_amount = Column(Numeric(15, 2), nullable=False, default=0)
     paid_amount = Column(Numeric(15, 2), nullable=False, default=0)
+    
+    # Override tenant_id to add ForeignKey
+    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False, index=True)
     
     # Relationships
     tenant = relationship("Tenant")

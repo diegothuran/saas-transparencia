@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import AdminLayout from '@/components/layout/AdminLayout';
+import Modal from '@/components/ui/Modal';
+import UserForm from '@/components/forms/UserForm';
+import { useUsers, User, UserCreate, UserUpdate } from '@/hooks/useUsers';
 import {
   UsersIcon,
-  ArrowDownTrayIcon,
   FunnelIcon,
   PlusIcon,
   MagnifyingGlassIcon,
@@ -13,23 +15,23 @@ import {
   TrashIcon
 } from '@heroicons/react/24/outline';
 
-interface User {
-  id: number;
-  name: string;
-  email: string;
-  role: string;
-  department: string;
-  lastLogin?: string;
-  status: 'active' | 'inactive';
-  avatar?: string;
-}
-
 export default function UsersPage() {
-  const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { 
+    users, 
+    loading, 
+    error, 
+    fetchUsers, 
+    createUser, 
+    updateUser, 
+    deleteUser 
+  } = useUsers();
+
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
+  const [showModal, setShowModal] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
     loadUsers();
@@ -37,69 +39,77 @@ export default function UsersPage() {
 
   const loadUsers = async () => {
     try {
-      // Simular carregamento de dados
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Dados simulados
-      setUsers([
-        {
-          id: 1,
-          name: 'Ana Oliveira',
-          email: 'ana.oliveira@prefeitura.gov.br',
-          role: 'admin',
-          department: 'Tecnologia da Informação',
-          lastLogin: '2024-08-20T08:30:00',
-          status: 'active'
-        },
-        {
-          id: 2,
-          name: 'Carlos Santos',
-          email: 'carlos.santos@prefeitura.gov.br',
-          role: 'editor',
-          department: 'Comunicação',
-          lastLogin: '2024-08-19T14:45:00',
-          status: 'active'
-        },
-        {
-          id: 3,
-          name: 'Mariana Silva',
-          email: 'mariana.silva@prefeitura.gov.br',
-          role: 'viewer',
-          department: 'Controladoria',
-          lastLogin: '2024-08-18T10:20:00',
-          status: 'active'
-        },
-        {
-          id: 4,
-          name: 'Paulo Mendes',
-          email: 'paulo.mendes@prefeitura.gov.br',
-          role: 'editor',
-          department: 'Secretaria de Finanças',
-          lastLogin: '2024-08-17T16:15:00',
-          status: 'active'
-        },
-        {
-          id: 5,
-          name: 'Luciana Costa',
-          email: 'luciana.costa@prefeitura.gov.br',
-          role: 'admin',
-          department: 'Gabinete',
-          lastLogin: '2024-08-15T09:10:00',
-          status: 'inactive'
-        },
-        {
-          id: 6,
-          name: 'Roberto Alves',
-          email: 'roberto.alves@prefeitura.gov.br',
-          role: 'viewer',
-          department: 'Secretaria de Administração',
-          status: 'inactive'
-        }
-      ]);
+      await fetchUsers(0, 100, 1); // tenant_id = 1 por padrão
     } catch (error) {
       console.error('Erro ao carregar usuários:', error);
+    }
+  };
+
+  const handleCreateUser = async (userData: UserCreate) => {
+    setActionLoading(true);
+    try {
+      await createUser(userData);
+      setShowModal(false);
+      // Opcional: mostrar notificação de sucesso
+    } catch (error) {
+      console.error('Erro ao criar usuário:', error);
+      // Opcional: mostrar notificação de erro
     } finally {
-      setLoading(false);
+      setActionLoading(false);
+    }
+  };
+
+  const handleUpdateUser = async (userData: UserUpdate) => {
+    if (!editingUser) return;
+    
+    setActionLoading(true);
+    try {
+      await updateUser(editingUser.id, userData);
+      setShowModal(false);
+      setEditingUser(null);
+      // Opcional: mostrar notificação de sucesso
+    } catch (error) {
+      console.error('Erro ao atualizar usuário:', error);
+      // Opcional: mostrar notificação de erro
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDeleteUser = async (userId: number) => {
+    if (!confirm('Tem certeza que deseja excluir este usuário?')) {
+      return;
+    }
+
+    try {
+      await deleteUser(userId);
+      // Opcional: mostrar notificação de sucesso
+    } catch (error) {
+      console.error('Erro ao deletar usuário:', error);
+      // Opcional: mostrar notificação de erro
+    }
+  };
+
+  const openCreateModal = () => {
+    setEditingUser(null);
+    setShowModal(true);
+  };
+
+  const openEditModal = (user: User) => {
+    setEditingUser(user);
+    setShowModal(true);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setEditingUser(null);
+  };
+
+  const handleFormSubmit = async (data: UserCreate | UserUpdate) => {
+    if (editingUser) {
+      await handleUpdateUser(data as UserUpdate);
+    } else {
+      await handleCreateUser(data as UserCreate);
     }
   };
 
@@ -116,6 +126,8 @@ export default function UsersPage() {
         return 'Editor';
       case 'viewer':
         return 'Visualizador';
+      case 'superuser':
+        return 'Super Usuário';
       default:
         return role;
     }
@@ -124,6 +136,7 @@ export default function UsersPage() {
   const getRoleBadgeClass = (role: string) => {
     switch (role) {
       case 'admin':
+      case 'superuser':
         return 'bg-purple-100 text-purple-800';
       case 'editor':
         return 'bg-blue-100 text-blue-800';
@@ -134,43 +147,34 @@ export default function UsersPage() {
     }
   };
 
-  const getStatusClass = (status: string) => {
-    switch (status) {
-      case 'active':
-        return 'bg-green-100 text-green-800';
-      case 'inactive':
-        return 'bg-gray-100 text-gray-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
+  const getStatusClass = (isActive: boolean) => {
+    return isActive 
+      ? 'bg-green-100 text-green-800'
+      : 'bg-gray-100 text-gray-800';
   };
 
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'active':
-        return 'Ativo';
-      case 'inactive':
-        return 'Inativo';
-      default:
-        return status;
-    }
+  const getStatusText = (isActive: boolean) => {
+    return isActive ? 'Ativo' : 'Inativo';
   };
 
   const filteredUsers = users.filter(user => {
     const matchesSearch = searchTerm === '' || 
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.department.toLowerCase().includes(searchTerm.toLowerCase());
+      user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (user.department && user.department.toLowerCase().includes(searchTerm.toLowerCase()));
     
     const matchesRole = filterRole === '' || user.role === filterRole;
-    const matchesStatus = filterStatus === '' || user.status === filterStatus;
+    const matchesStatus = filterStatus === '' || 
+      (filterStatus === 'active' && user.is_active) ||
+      (filterStatus === 'inactive' && !user.is_active);
     
     return matchesSearch && matchesRole && matchesStatus;
   });
 
-  const roles = ['admin', 'editor', 'viewer'];
+  const roles = ['admin', 'editor', 'viewer', 'superuser'];
   const statuses = ['active', 'inactive'];
-  const activeUsersCount = users.filter(user => user.status === 'active').length;
+  const activeUsersCount = users.filter(user => user.is_active).length;
 
   const getInitials = (name: string) => {
     return name
@@ -214,9 +218,10 @@ export default function UsersPage() {
               Gerenciamento de usuários do sistema
             </p>
           </div>
-          <div className="mt-4 sm:mt-0">
+          <div>
             <button
               type="button"
+              onClick={openCreateModal}
               className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
               <PlusIcon className="h-5 w-5 mr-2" />
@@ -312,7 +317,7 @@ export default function UsersPage() {
                 <option value="">Todos os status</option>
                 {statuses.map((status) => (
                   <option key={status} value={status}>
-                    {getStatusText(status)}
+                    {status === 'active' ? 'Ativo' : 'Inativo'}
                   </option>
                 ))}
               </select>
@@ -329,14 +334,12 @@ export default function UsersPage() {
                 Limpar Filtros
               </button>
               <button
-                onClick={() => {
-                  setLoading(true);
-                  loadUsers();
-                }}
+                onClick={loadUsers}
                 className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                disabled={loading}
               >
                 <ArrowPathIcon className="h-4 w-4 mr-2" />
-                Atualizar
+                {loading ? 'Carregando...' : 'Atualizar'}
               </button>
             </div>
           </div>
@@ -373,19 +376,11 @@ export default function UsersPage() {
                   <tr key={user.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        {user.avatar ? (
-                          <img 
-                            className="h-10 w-10 rounded-full" 
-                            src={user.avatar} 
-                            alt={`Avatar de ${user.name}`} 
-                          />
-                        ) : (
-                          <div className={`h-10 w-10 rounded-full flex items-center justify-center text-white ${getAvatarBgColor(user.id)}`}>
-                            {getInitials(user.name)}
-                          </div>
-                        )}
+                        <div className={`h-10 w-10 rounded-full flex items-center justify-center text-white ${getAvatarBgColor(user.id)}`}>
+                          {getInitials(user.full_name)}
+                        </div>
                         <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">{user.name}</div>
+                          <div className="text-sm font-medium text-gray-900">{user.full_name}</div>
                           <div className="text-sm text-gray-500">{user.email}</div>
                         </div>
                       </div>
@@ -399,23 +394,25 @@ export default function UsersPage() {
                       {user.department}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {formatDate(user.lastLogin)}
+                      {formatDate(user.updated_at)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(user.status)}`}>
-                        {getStatusText(user.status)}
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(user.is_active)}`}>
+                        {getStatusText(user.is_active)}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <button 
                         className="text-blue-600 hover:text-blue-900 mr-3"
                         title="Editar"
+                        onClick={() => openEditModal(user)}
                       >
                         <PencilIcon className="h-5 w-5" />
                       </button>
                       <button 
                         className="text-red-600 hover:text-red-900"
                         title="Excluir"
+                        onClick={() => handleDeleteUser(user.id)}
                       >
                         <TrashIcon className="h-5 w-5" />
                       </button>
@@ -438,6 +435,21 @@ export default function UsersPage() {
             </p>
           </div>
         </div>
+
+        {/* Modal para criar/editar usuário */}
+        <Modal
+          open={showModal}
+          onClose={closeModal}
+          title={editingUser ? 'Editar Usuário' : 'Novo Usuário'}
+          maxWidth="2xl"
+        >
+          <UserForm
+            user={editingUser || undefined}
+            onSubmit={handleFormSubmit}
+            onCancel={closeModal}
+            loading={actionLoading}
+          />
+        </Modal>
       </div>
     </AdminLayout>
   );

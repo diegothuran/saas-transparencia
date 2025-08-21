@@ -7,13 +7,15 @@ import time
 import logging
 
 from app.core.config import settings
-from app.core.database import engine, Base
+from app.core.database import sync_engine, Base
 from app.api.api_v1.api import api_router
 from app.core.security import get_password_hash
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+from contextlib import asynccontextmanager
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -22,8 +24,7 @@ async def lifespan(app: FastAPI):
     logger.info("Starting up...")
     
     # Create database tables
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    Base.metadata.create_all(bind=sync_engine)
     
     yield
     
@@ -42,14 +43,13 @@ app = FastAPI(
 )
 
 # Set all CORS enabled origins
-if settings.BACKEND_CORS_ORIGINS:
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=[str(origin) for origin in settings.BACKEND_CORS_ORIGINS],
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow all origins for development
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["*"],
+)
 
 # Add trusted host middleware
 app.add_middleware(
@@ -66,12 +66,25 @@ async def add_process_time_header(request: Request, call_next):
     response.headers["X-Process-Time"] = str(process_time)
     return response
 
+# Add OPTIONS handler for all routes
+@app.options("/{path:path}")
+async def handle_options(request: Request):
+    """Handle OPTIONS requests for CORS"""
+    return JSONResponse(
+        content={},
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+            "Access-Control-Allow-Headers": "*",
+        }
+    )
+
 # Include API router
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
 # Health check endpoint
 @app.get("/health")
-async def health_check():
+def health_check():
     """Health check endpoint"""
     return {
         "status": "healthy",
@@ -81,7 +94,7 @@ async def health_check():
 
 # Root endpoint
 @app.get("/")
-async def root():
+def root():
     """Root endpoint"""
     return {
         "message": "SaaS de Portais de Transparência Pública",
@@ -92,7 +105,7 @@ async def root():
 
 # Global exception handler
 @app.exception_handler(Exception)
-async def global_exception_handler(request: Request, exc: Exception):
+def global_exception_handler(request: Request, exc: Exception):
     logger.error(f"Global exception: {exc}")
     return JSONResponse(
         status_code=500,

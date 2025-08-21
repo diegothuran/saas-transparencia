@@ -50,6 +50,9 @@ class ESICRequest(TenantBaseModel):
     response_text = Column(Text, nullable=True)
     response_attachments = Column(Text, nullable=True)  # JSON array of file paths
     
+    # Override tenant_id to add ForeignKey
+    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False, index=True)
+    
     # Assignment
     assigned_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     assigned_department = Column(String(100), nullable=True)
@@ -97,6 +100,30 @@ class ESICRequest(TenantBaseModel):
         delta = self.appeal_due_date - datetime.now().date()
         return max(0, delta.days)
 
+class ESICAttachment(TenantBaseModel):
+    __tablename__ = "esic_attachments"
+    
+    request_id = Column(Integer, ForeignKey("esic_requests.id"), nullable=False)
+    filename = Column(String(255), nullable=False)
+    file_path = Column(String(500), nullable=False)
+    file_size = Column(Integer, nullable=False)  # Size in bytes
+    content_type = Column(String(100), nullable=False)
+    
+    # Override tenant_id to add ForeignKey
+    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False, index=True)
+    
+    # Relationships
+    request = relationship("ESICRequest", backref="attachments")
+    
+    @property
+    def download_url(self) -> str:
+        """Get download URL for the attachment"""
+        return f"/api/v1/esic/attachments/{self.id}/download"
+    
+    def __repr__(self):
+        return f"<ESICAttachment(id={self.id}, filename='{self.filename}')>"
+
+
 class ESICStatistics(TenantBaseModel):
     __tablename__ = "esic_statistics"
     
@@ -118,6 +145,9 @@ class ESICStatistics(TenantBaseModel):
     contracts_requests = Column(Integer, default=0, nullable=False)
     personnel_requests = Column(Integer, default=0, nullable=False)
     other_requests = Column(Integer, default=0, nullable=False)
+    
+    # Override tenant_id to add ForeignKey
+    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False, index=True)
     
     # Relationships
     tenant = relationship("Tenant")

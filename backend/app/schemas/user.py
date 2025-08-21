@@ -48,17 +48,18 @@ class UserUpdatePassword(BaseModel):
         return v
 
 # Response schemas
-class User(UserBase):
+class UserResponse(UserBase):
     id: int
     is_superuser: bool
     is_verified: bool
     created_at: datetime
     updated_at: datetime
     
-    class Config:
-        from_attributes = True
+    model_config = {
+        "from_attributes": True
+    }
 
-class UserInDB(User):
+class UserInDB(UserResponse):
     hashed_password: str
 
 # Authentication schemas
@@ -70,6 +71,10 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     user_id: Optional[int] = None
+    
+class TokenPayload(BaseModel):
+    sub: Optional[int] = None
+    exp: Optional[datetime] = None
 
 class LoginRequest(BaseModel):
     username: str  # Can be username or email
@@ -92,11 +97,12 @@ class UserProfile(BaseModel):
     is_active: bool
     created_at: datetime
     
-    class Config:
-        from_attributes = True
+    model_config = {
+        "from_attributes": True
+    }
 
 class UserList(BaseModel):
-    users: list[User]
+    users: list[UserResponse]
     total: int
     page: int
     size: int

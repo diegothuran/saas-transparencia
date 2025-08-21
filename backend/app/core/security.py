@@ -1,20 +1,30 @@
 from datetime import datetime, timedelta
 from typing import Any, Union, Optional
 from jose import jwt, JWTError
-from passlib.context import CryptContext
 from fastapi import HTTPException, status, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.database import get_db
 from app.models.user import User
-from app.services.user_service import UserService
+from passlib.context import CryptContext
+
+# JWT token scheme
+security = HTTPBearer()
+
+# JWT configuration
+ALGORITHM = "HS256"  # Algorithm for JWT
 
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# JWT token scheme
-security = HTTPBearer()
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """Verify password against hash"""
+    return pwd_context.verify(plain_password, hashed_password)
+
+def get_password_hash(password: str) -> str:
+    """Hash password"""
+    return pwd_context.hash(password)
 
 def create_access_token(
     subject: Union[str, Any], expires_delta: timedelta = None
@@ -33,13 +43,7 @@ def create_access_token(
     )
     return encoded_jwt
 
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify password against hash"""
-    return pwd_context.verify(plain_password, hashed_password)
-
-def get_password_hash(password: str) -> str:
-    """Generate password hash"""
-    return pwd_context.hash(password)
+# Password verification functions moved to app.core.password
 
 def verify_token(token: str) -> Optional[str]:
     """Verify JWT token and return subject"""
@@ -54,9 +58,9 @@ def verify_token(token: str) -> Optional[str]:
     except JWTError:
         return None
 
-async def get_current_user(
+def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
-    db: AsyncSession = Depends(get_db)
+    db: Session = Depends(get_db)
 ) -> User:
     """Get current authenticated user"""
     credentials_exception = HTTPException(
@@ -71,8 +75,10 @@ async def get_current_user(
     if user_id is None:
         raise credentials_exception
     
-    user_service = UserService(db)
-    user = await user_service.get_by_id(int(user_id))
+    # Import here to avoid circular import
+    from app.services.user_service import UserService
+    user_service = UserService()
+    user = user_service.get_user(db, int(user_id))
     
     if user is None:
         raise credentials_exception
@@ -85,7 +91,7 @@ async def get_current_user(
     
     return user
 
-async def get_current_active_superuser(
+def get_current_active_superuser(
     current_user: User = Depends(get_current_user),
 ) -> User:
     """Get current active superuser"""

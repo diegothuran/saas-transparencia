@@ -49,6 +49,12 @@ class Supplier(TenantBaseModel):
     phone = Column(String(20), nullable=True)
     address = Column(Text, nullable=True)
     
+    # Override tenant_id to add ForeignKey
+    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False, index=True)
+    
+    # Relationships
+    tenant = relationship("Tenant")
+    
     # Status
     is_active = Column(Boolean, default=True, nullable=False)
     is_blocked = Column(Boolean, default=False, nullable=False)
@@ -92,6 +98,9 @@ class Bidding(TenantBaseModel):
     # Results
     winner_supplier_id = Column(Integer, ForeignKey("suppliers.id"), nullable=True)
     winning_value = Column(Numeric(15, 2), nullable=True)
+    
+    # Override tenant_id to add ForeignKey
+    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False, index=True)
     
     # Relationships
     tenant = relationship("Tenant")
@@ -143,6 +152,9 @@ class Contract(TenantBaseModel):
     # Execution
     executed_value = Column(Numeric(15, 2), default=0, nullable=False)
     
+    # Override tenant_id to add ForeignKey
+    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False, index=True)
+    
     # Relationships
     tenant = relationship("Tenant", back_populates="contracts")
     supplier = relationship("Supplier", back_populates="contracts")
@@ -187,6 +199,9 @@ class ContractAmendment(TenantBaseModel):
     
     # Documents
     amendment_file = Column(String(500), nullable=True)
+    
+    # Override tenant_id to add ForeignKey
+    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False, index=True)
     
     # Relationships
     contract = relationship("Contract", back_populates="amendments")
