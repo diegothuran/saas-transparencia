@@ -1,0 +1,56 @@
+{
+  "name": "saas-transparencia",
+  "version": "1.0.0",
+  "description": "SaaS de Portais de Transparência Pública",
+  "private": true,
+  "scripts": {
+    "dev": "docker-compose up -d",
+    "dev:logs": "docker-compose logs -f",
+    "dev:stop": "docker-compose down",
+    "dev:clean": "docker-compose down -v --remove-orphans",
+    "setup": "chmod +x scripts/setup.sh && ./scripts/setup.sh",
+    "deploy": "chmod +x scripts/deploy.sh && ./scripts/deploy.sh",
+    "backend:dev": "cd backend && uvicorn app.main:app --reload --port 8000",
+    "frontend:dev": "cd frontend && npm run dev",
+    "backend:test": "cd backend && pytest",
+    "frontend:test": "cd frontend && npm test",
+    "backend:lint": "cd backend && black . && isort . && flake8 .",
+    "frontend:lint": "cd frontend && npm run lint",
+    "db:migrate": "cd backend && alembic upgrade head",
+    "db:migration": "cd backend && alembic revision --autogenerate",
+    "db:reset": "docker-compose down postgres && docker-compose up -d postgres",
+    "build": "docker-compose build",
+    "build:prod": "docker-compose -f docker-compose.prod.yml build",
+    "prod": "docker-compose -f docker-compose.prod.yml up -d",
+    "logs": "docker-compose logs -f",
+    "ps": "docker-compose ps",
+    "clean": "docker system prune -f && docker volume prune -f"
+  },
+  "keywords": [
+    "transparencia",
+    "governo",
+    "lei-acesso-informacao",
+    "lc-131",
+    "saas",
+    "fastapi",
+    "nextjs"
+  ],
+  "author": "SaaS Transparência Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/seu-usuario/saas-transparencia.git"
+  },
+  "bugs": {
+    "url": "https://github.com/seu-usuario/saas-transparencia/issues"
+  },
+  "homepage": "https://github.com/seu-usuario/saas-transparencia#readme",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "workspaces": [
+    "frontend"
+  ]
+}
+
