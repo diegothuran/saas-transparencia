@@ -106,7 +106,7 @@ export default function ContatoPage() {
                           <dt className="text-sm font-medium text-gray-900">Telefone</dt>
                           <dd className="mt-1 text-sm text-gray-600">
                             <a href="tel:+550000000000" className="text-blue-600 hover:text-blue-500">
-                              (00) 0000-0000
+                              (81) 0000-5555
                             </a>
                           </dd>
                         </div>
