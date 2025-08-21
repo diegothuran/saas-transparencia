@@ -1,45 +1,78 @@
-# Guia de Desenvolvimento - SaaS de Portais de Transparência
+# 🛠️ Guia Técnico de Desenvolvimento
 
-## 🏗️ Arquitetura
-
-### Stack Tecnológico
-
-- **Backend**: Python 3.11 + FastAPI
-- **Frontend**: Next.js 14 + TypeScript + Tailwind CSS
-- **Banco de Dados**: PostgreSQL 15
-- **Cache**: Redis 7
-- **Busca**: Elasticsearch 8
-- **Storage**: MinIO (S3-compatible)
-- **Queue**: Celery + Redis
-- **Containerização**: Docker + Docker Compose
-
-### Estrutura do Projeto
+## 📁 Estrutura Detalhada do Projeto
 
 ```
 saas-transparencia/
-├── backend/                 # API FastAPI
-│   ├── app/
-│   │   ├── api/            # Endpoints da API
-│   │   ├── core/           # Configurações e segurança
-│   │   ├── models/         # Modelos SQLAlchemy
-│   │   ├── schemas/        # Schemas Pydantic
-│   │   ├── services/       # Lógica de negócio
-│   │   └── utils/          # Utilitários
-│   ├── alembic/            # Migrações do banco
-│   ├── tests/              # Testes
-│   └── requirements.txt    # Dependências Python
-├── frontend/               # App Next.js
+├── 🖥️ frontend/                    # Next.js 15 + TypeScript
+│   ├── public/                     # Assets estáticos
 │   ├── src/
-│   │   ├── app/           # App Router (Next.js 13+)
-│   │   ├── components/    # Componentes React
-│   │   ├── lib/           # Bibliotecas e utilitários
-│   │   ├── hooks/         # Custom hooks
-│   │   └── types/         # Tipos TypeScript
-│   └── package.json       # Dependências Node.js
-├── docker/                # Configurações Docker
-├── scripts/               # Scripts de automação
-└── docs/                  # Documentação
+│   │   ├── app/                    # App Router do Next.js 15
+│   │   │   ├── admin/              # Páginas administrativas (CRUD)
+│   │   │   │   ├── usuarios/       # 👥 CRUD de usuários
+│   │   │   │   ├── receitas/       # 💰 CRUD de receitas
+│   │   │   │   ├── despesas/       # 💸 CRUD de despesas
+│   │   │   │   ├── contratos/      # 📄 CRUD de contratos
+│   │   │   │   └── esic/           # 📋 CRUD e-SIC
+│   │   │   ├── login/              # 🔐 Autenticação
+│   │   │   ├── (public)/           # 🌐 Páginas públicas
+│   │   │   └── layout.tsx          # Layout principal
+│   │   ├── components/
+│   │   │   ├── auth/               # 🔐 Componentes de autenticação
+│   │   │   ├── forms/              # 📝 Formulários reutilizáveis
+│   │   │   ├── layout/             # 🏗️ Layouts e navegação
+│   │   │   └── ui/                 # 🎨 Componentes base (Modal, etc)
+│   │   ├── contexts/               # ⚡ React Contexts
+│   │   ├── hooks/                  # 🪝 Custom React Hooks
+│   │   ├── lib/                    # 🔧 Utilities e configurações
+│   │   ├── types/                  # 📝 TypeScript interfaces
+│   │   └── utils/                  # 🛠️ Funções auxiliares
+│   ├── tailwind.config.js          # 🎨 Configuração do Tailwind
+│   ├── next.config.ts              # ⚙️ Configuração do Next.js 15
+│   └── package.json                # 📦 Dependências frontend
+├── 🔧 backend/                     # FastAPI + Python 3.11
+│   ├── app/
+│   │   ├── api/
+│   │   │   └── api_v1/
+│   │   │       ├── endpoints/      # 🛣️ Rotas da API
+│   │   │       │   ├── auth.py     # 🔐 Autenticação JWT
+│   │   │       │   ├── users.py    # 👥 CRUD usuários
+│   │   │       │   ├── financial.py # 💰 Receitas/Despesas
+│   │   │       │   ├── contracts.py # 📄 Contratos
+│   │   │       │   └── esic.py     # 📋 e-SIC
+│   │   │       └── api.py          # 🚀 Router principal
+│   │   ├── core/                   # ⚙️ Configurações core
+│   │   │   ├── config.py           # 🔧 Settings & Environment
+│   │   │   ├── database.py         # 🗃️ Conexão PostgreSQL
+│   │   │   └── security.py         # 🔒 JWT e Password hashing
+│   │   ├── models/                 # 🏗️ SQLAlchemy models
+│   │   ├── schemas/                # 📝 Pydantic schemas
+│   │   ├── services/               # 💼 Business logic layer
+│   │   └── utils/                  # 🛠️ Utilities
+│   ├── alembic/                    # 🔄 Migrações do banco
+│   ├── requirements.txt            # 📋 Dependências Python
+│   └── Dockerfile                  # 🐳 Container backend
+├── 🐘 docker/                      # 🐳 Configurações Docker
+│   ├── nginx/                      # 🌐 Configuração Nginx
+│   └── postgres/                   # 🗄️ Scripts PostgreSQL
+├── 📋 docs/                        # 📚 Documentação completa
+├── 🧪 scripts/                     # ⚡ Scripts utilitários
+├── docker-compose.yml              # 🐳 Orquestração completa
+├── heroku.yml                      # ☁️ Deploy Heroku
+└── README.md                       # 📖 Documentação principal
 ```
+
+## 🏗️ Arquitetura Avançada
+
+### Stack Tecnológico Completo
+
+- **Backend**: Python 3.11 + FastAPI + SQLAlchemy + Alembic
+- **Frontend**: Next.js 15 + TypeScript + Tailwind CSS + Headless UI
+- **Banco de Dados**: PostgreSQL 15 com índices otimizados
+- **Autenticação**: JWT + bcrypt password hashing
+- **Containerização**: Docker + Docker Compose
+- **Proxy Reverso**: Nginx com SSL termination
+- **Deploy**: Heroku + GitHub Actions CI/CD
 
 ## 🚀 Setup de Desenvolvimento
 
@@ -208,85 +241,342 @@ pytest --cov=app
 pytest tests/test_exemplo.py
 ```
 
-### Frontend (Next.js)
+### Frontend (Next.js 15 + TypeScript)
 
-#### Estrutura de Componentes
+#### 🎯 Padrões Arquiteturais
 
-```tsx
-// src/components/ui/Button.tsx - Componente base
-interface ButtonProps {
-  children: React.ReactNode;
-  variant?: 'primary' | 'secondary';
-  onClick?: () => void;
-}
+- **App Router**: Nova estrutura de roteamento do Next.js 15 com layout aninhados
+- **Server Components**: Renderização no servidor por padrão para melhor SEO
+- **Custom Hooks**: Lógica de estado isolada e reutilizável (`useUsers`, `useContracts`, etc.)
+- **Context API**: Gerenciamento de estado global com `AuthContext`
+- **Tailwind CSS**: Sistema de design utilitário e totalmente responsivo
+- **Headless UI**: Componentes acessíveis e sem estilo pré-definido
 
-export function Button({ children, variant = 'primary', onClick }: ButtonProps) {
-  return (
-    <button
-      className={`px-4 py-2 rounded ${
-        variant === 'primary' ? 'bg-blue-600 text-white' : 'bg-gray-200'
-      }`}
-      onClick={onClick}
-    >
-      {children}
-    </button>
-  );
-}
-```
+#### 🔗 Custom Hooks Pattern
 
-```tsx
-// src/hooks/useApi.ts - Custom hook para API
+```typescript
+// Exemplo: hooks/useUsers.ts
 import { useState, useEffect } from 'react';
-import { apiClient } from '@/lib/api';
+import { api } from '@/lib/api';
+import { User, CreateUserData, UpdateUserData } from '@/types';
 
-export function useApi<T>(url: string) {
-  const [data, setData] = useState<T | null>(null);
-  const [loading, setLoading] = useState(true);
+export const useUsers = () => {
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
+  
+  const fetchUsers = async () => {
+    setLoading(true);
+    try {
+      const data = await api.get<User[]>('/users');
+      setUsers(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro desconhecido');
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const createUser = async (userData: CreateUserData) => {
+    try {
+      const newUser = await api.post<User>('/users', userData);
+      setUsers(prev => [...prev, newUser]);
+      return newUser;
+    } catch (err) {
+      throw new Error(err instanceof Error ? err.message : 'Erro ao criar usuário');
+    }
+  };
+  
+  const updateUser = async (id: number, userData: UpdateUserData) => {
+    try {
+      const updatedUser = await api.put<User>(`/users/${id}`, userData);
+      setUsers(prev => prev.map(user => 
+        user.id === id ? updatedUser : user
+      ));
+      return updatedUser;
+    } catch (err) {
+      throw new Error(err instanceof Error ? err.message : 'Erro ao atualizar usuário');
+    }
+  };
+  
+  const deleteUser = async (id: number) => {
+    try {
+      await api.delete(`/users/${id}`);
+      setUsers(prev => prev.filter(user => user.id !== id));
+    } catch (err) {
+      throw new Error(err instanceof Error ? err.message : 'Erro ao deletar usuário');
+    }
+  };
+  
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const result = await apiClient.get<T>(url);
-        setData(result);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Erro desconhecido');
-      } finally {
-        setLoading(false);
-      }
-    };
+    fetchUsers();
+  }, []);
+  
+  return {
+    users,
+    loading,
+    error,
+    fetchUsers,
+    createUser,
+    updateUser,
+    deleteUser
+  };
+};
+```
 
-    fetchData();
-  }, [url]);
+#### 🎨 Sistema de Design & UI
 
-  return { data, loading, error };
+- **Paleta de Cores**: Sistema baseado em Tailwind com cores semânticas
+- **Tipografia**: Inter (Google Fonts) com hierarquia clara
+- **Iconografia**: Heroicons v2 para consistência visual
+- **Componentes**: Headless UI + Tailwind para acessibilidade
+- **Layout**: CSS Grid + Flexbox para layouts responsivos
+- **Estados**: Loading, Error, Success states para melhor UX
+
+```typescript
+// Exemplo: components/ui/Modal.tsx
+import { Fragment } from 'react';
+import { Dialog, Transition } from '@headlessui/react';
+import { XMarkIcon } from '@heroicons/react/24/outline';
+
+interface ModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  title: string;
+  children: React.ReactNode;
+}
+
+export function Modal({ isOpen, onClose, title, children }: ModalProps) {
+  return (
+    <Transition appear show={isOpen} as={Fragment}>
+      <Dialog as="div" className="relative z-50" onClose={onClose}>
+        <Transition.Child
+          as={Fragment}
+          enter="ease-out duration-300"
+          enterFrom="opacity-0"
+          enterTo="opacity-100"
+          leave="ease-in duration-200"
+          leaveFrom="opacity-100"
+          leaveTo="opacity-0"
+        >
+          <div className="fixed inset-0 bg-black/25" />
+        </Transition.Child>
+
+        <div className="fixed inset-0 overflow-y-auto">
+          <div className="flex min-h-full items-center justify-center p-4 text-center">
+            <Transition.Child
+              as={Fragment}
+              enter="ease-out duration-300"
+              enterFrom="opacity-0 scale-95"
+              enterTo="opacity-100 scale-100"
+              leave="ease-in duration-200"
+              leaveFrom="opacity-100 scale-100"
+              leaveTo="opacity-0 scale-95"
+            >
+              <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
+                <div className="flex items-center justify-between">
+                  <Dialog.Title className="text-lg font-medium leading-6 text-gray-900">
+                    {title}
+                  </Dialog.Title>
+                  <button
+                    onClick={onClose}
+                    className="rounded-md text-gray-400 hover:text-gray-500"
+                  >
+                    <XMarkIcon className="h-5 w-5" />
+                  </button>
+                </div>
+                <div className="mt-4">
+                  {children}
+                </div>
+              </Dialog.Panel>
+            </Transition.Child>
+          </div>
+        </div>
+      </Dialog>
+    </Transition>
+  );
 }
 ```
 
-#### Páginas
+### Backend (FastAPI + Python)
 
-```tsx
-// src/app/exemplo/page.tsx - Página
-'use client';
+#### 🏛️ Padrões Arquiteturais Avançados
 
-import { useApi } from '@/hooks/useApi';
-import { Exemplo } from '@/types';
+- **Repository Pattern**: Abstração completa de acesso a dados
+- **Service Layer Pattern**: Lógica de negócio isolada e testável
+- **Dependency Injection**: Sistema robusto de injeção de dependências
+- **Pydantic Schemas**: Validação automática e serialização de dados
+- **SQLAlchemy ORM**: Mapeamento objeto-relacional com relacionamentos
+- **Async/Await**: Programação assíncrona para alta performance
 
-export default function ExemploPage() {
-  const { data, loading, error } = useApi<Exemplo[]>('/api/exemplos');
+#### 🔐 Sistema de Segurança Avançado
 
-  if (loading) return <div>Carregando...</div>;
-  if (error) return <div>Erro: {error}</div>;
+```python
+# core/security.py - Sistema JWT completo
+from datetime import datetime, timedelta
+from typing import Optional, Union
+from jose import JWTError, jwt
+from passlib.context import CryptContext
+from fastapi import HTTPException, status
 
-  return (
-    <div>
-      <h1>Exemplos</h1>
-      {data?.map((exemplo) => (
-        <div key={exemplo.id}>{exemplo.nome}</div>
-      ))}
-    </div>
-  );
-}
+# Context para hashing de senhas
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+SECRET_KEY = "your-secret-key-here"
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """Verifica se a senha está correta"""
+    return pwd_context.verify(plain_password, hashed_password)
+
+def get_password_hash(password: str) -> str:
+    """Gera hash da senha"""
+    return pwd_context.hash(password)
+
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
+    """Cria token JWT de acesso"""
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+def verify_token(token: str) -> Optional[dict]:
+    """Verifica e decodifica token JWT"""
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username: str = payload.get("sub")
+        if username is None:
+            return None
+        return payload
+    except JWTError:
+        return None
+
+# Dependency para autenticação
+async def get_current_user(token: str = Depends(oauth2_scheme)):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    
+    payload = verify_token(token)
+    if payload is None:
+        raise credentials_exception
+    
+    # Buscar usuário no banco de dados
+    user = await user_service.get_by_username(payload.get("sub"))
+    if user is None:
+        raise credentials_exception
+    
+    return user
+```
+
+#### 📊 Service Layer Pattern
+
+```python
+# services/base_service.py - Serviço base genérico
+from typing import Generic, TypeVar, Type, Optional, List
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+from sqlalchemy.orm import selectinload
+from pydantic import BaseModel
+
+ModelType = TypeVar("ModelType")
+CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)
+UpdateSchemaType = TypeVar("UpdateSchemaType", bound=BaseModel)
+
+class BaseService(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
+    def __init__(self, model: Type[ModelType], db: AsyncSession):
+        self.model = model
+        self.db = db
+
+    async def get(self, id: int) -> Optional[ModelType]:
+        """Busca por ID"""
+        result = await self.db.execute(
+            select(self.model).where(self.model.id == id)
+        )
+        return result.scalar_one_or_none()
+
+    async def get_multi(
+        self, skip: int = 0, limit: int = 100
+    ) -> List[ModelType]:
+        """Lista com paginação"""
+        result = await self.db.execute(
+            select(self.model).offset(skip).limit(limit)
+        )
+        return result.scalars().all()
+
+    async def create(self, obj_in: CreateSchemaType) -> ModelType:
+        """Cria novo registro"""
+        obj_data = obj_in.model_dump()
+        db_obj = self.model(**obj_data)
+        self.db.add(db_obj)
+        await self.db.commit()
+        await self.db.refresh(db_obj)
+        return db_obj
+
+    async def update(
+        self, db_obj: ModelType, obj_in: UpdateSchemaType
+    ) -> ModelType:
+        """Atualiza registro existente"""
+        obj_data = obj_in.model_dump(exclude_unset=True)
+        for field, value in obj_data.items():
+            setattr(db_obj, field, value)
+        
+        await self.db.commit()
+        await self.db.refresh(db_obj)
+        return db_obj
+
+    async def delete(self, id: int) -> bool:
+        """Remove registro"""
+        obj = await self.get(id)
+        if obj:
+            await self.db.delete(obj)
+            await self.db.commit()
+            return True
+        return False
+
+# services/user_service.py - Serviço específico de usuários
+from app.models.user import User
+from app.schemas.user import UserCreate, UserUpdate
+from app.core.security import get_password_hash, verify_password
+
+class UserService(BaseService[User, UserCreate, UserUpdate]):
+    def __init__(self, db: AsyncSession):
+        super().__init__(User, db)
+
+    async def get_by_email(self, email: str) -> Optional[User]:
+        """Busca usuário por email"""
+        result = await self.db.execute(
+            select(User).where(User.email == email)
+        )
+        return result.scalar_one_or_none()
+
+    async def create(self, obj_in: UserCreate) -> User:
+        """Cria usuário com senha hasheada"""
+        obj_data = obj_in.model_dump()
+        obj_data["hashed_password"] = get_password_hash(obj_data.pop("password"))
+        
+        db_obj = User(**obj_data)
+        self.db.add(db_obj)
+        await self.db.commit()
+        await self.db.refresh(db_obj)
+        return db_obj
+
+    async def authenticate(self, email: str, password: str) -> Optional[User]:
+        """Autentica usuário"""
+        user = await self.get_by_email(email)
+        if not user:
+            return None
+        if not verify_password(password, user.hashed_password):
+            return None
+        return user
 ```
 
 ## 🧪 Testes
