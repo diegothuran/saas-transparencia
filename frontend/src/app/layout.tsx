@@ -1,15 +1,19 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'] })
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+}
 
 export const metadata: Metadata = {
   title: 'Portal de Transparência Pública',
   description: 'Sistema completo para transparência pública municipal em conformidade com LAI e LC 131/09',
   keywords: 'transparência, LAI, LC 131, município, governo, dados abertos',
   authors: [{ name: 'SaaS Transparência' }],
-  viewport: 'width=device-width, initial-scale=1',
   robots: 'index, follow',
   openGraph: {
     title: 'Portal de Transparência Pública',
